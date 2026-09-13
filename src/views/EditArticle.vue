@@ -555,7 +555,7 @@ onMounted(() => {
 
   writing-mode: vertical-lr;
 
-  direction: rtl;
+  direction: ltr;
 
   text-orientation: mixed;
 
