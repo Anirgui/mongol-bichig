@@ -7,10 +7,28 @@ const selectedCategory = ref('Бүгд')
 
 const categories = ['Бүгд', 'Өгүүллэг', 'Шүлэг', 'Үлгэр']
 
-function loadArticles() {
-  articles.value = JSON.parse(
-    localStorage.getItem('articles') || '[]'
-  )
+async function loadArticles() {
+  try {
+    const response = await fetch(
+      'https://mongol-bichig.vercel.app/api/articles'
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || 'Нийтлэл авахад алдаа гарлаа'
+      )
+    }
+
+    articles.value = data.articles || []
+
+    console.log('Neon-оос авсан нийтлэлүүд:', articles.value)
+
+  } catch (error) {
+    console.error(error)
+    alert('Нийтлэлүүдийг авахад алдаа гарлаа: ' + error.message)
+  }
 }
 
 const filteredArticles = computed(() => {
