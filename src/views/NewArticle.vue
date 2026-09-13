@@ -8,7 +8,6 @@ const title = ref('')
 const author = ref('')
 const category = ref('Өгүүллэг')
 const content = ref('')
-const background = ref('')
 
 const editor = ref(null)
 
@@ -18,7 +17,7 @@ function updateContent() {
   }
 }
 
-function publishArticle() {
+async function publishArticle() {
   updateContent()
 
   if (!title.value.trim()) {
@@ -31,10 +30,6 @@ function publishArticle() {
     return
   }
 
-  const articles = JSON.parse(
-    localStorage.getItem('articles') || '[]'
-  )
-
   const article = {
     id: Date.now(),
     title: title.value.trim(),
@@ -45,16 +40,37 @@ function publishArticle() {
     date: new Date().toLocaleDateString('mn-MN')
   }
 
-  articles.unshift(article)
+  try {
+    const response = await fetch(
+      'https://mongol-bichig.vercel.app/api/articles',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(article)
+      }
+    )
 
-  localStorage.setItem(
-    'articles',
-    JSON.stringify(articles)
-  )
+    const data = await response.json()
 
-  alert('Нийтлэл амжилттай нийтлэгдлээ! 🎉')
+    if (!response.ok) {
+      throw new Error(
+        data.message || 'Нийтлэл илгээхэд алдаа гарлаа'
+      )
+    }
 
-  router.push('/admin')
+    console.log('API хариу:', data)
+
+    alert('API руу нийтлэл амжилттай илгээгдлээ! 🎉')
+
+    router.push('/admin')
+
+  } catch (error) {
+    console.error(error)
+
+    alert('Алдаа: ' + error.message)
+  }
 }
 </script>
 
@@ -62,8 +78,6 @@ function publishArticle() {
 <template>
 
   <div class="page">
-
-    <!-- SIDEBAR -->
 
     <aside class="sidebar">
 
@@ -79,8 +93,6 @@ function publishArticle() {
 
     </aside>
 
-
-    <!-- MAIN -->
 
     <main class="content">
 
@@ -98,8 +110,6 @@ function publishArticle() {
       </div>
 
 
-      <!-- TITLE -->
-
       <input
         v-model="title"
         class="title"
@@ -107,8 +117,6 @@ function publishArticle() {
         placeholder="Гарчиг оруулах"
       />
 
-
-      <!-- EDITOR -->
 
       <div class="editor">
 
@@ -123,12 +131,9 @@ function publishArticle() {
       </div>
 
 
-      <!-- SETTINGS -->
-
       <div class="settings">
 
         <h3>Нийтлэлийн мэдээлэл</h3>
-
 
         <label>
           Зохиогч
@@ -139,7 +144,6 @@ function publishArticle() {
           type="text"
           placeholder="Зохиогчийн нэр"
         />
-
 
         <label>
           Ангилал
@@ -177,9 +181,7 @@ function publishArticle() {
 
 .page {
   min-height: 100vh;
-
   display: flex;
-
   background: #f5f5f5;
 }
 
@@ -188,33 +190,24 @@ function publishArticle() {
 
 .sidebar {
   width: 230px;
-
   background: #202124;
-
   color: white;
-
   padding: 25px 15px;
 }
 
 
 .sidebar h2 {
   font-size: 18px;
-
   margin-bottom: 30px;
 }
 
 
 .sidebar a {
   display: block;
-
   color: white;
-
   text-decoration: none;
-
   padding: 12px;
-
   border-radius: 6px;
-
   margin-bottom: 5px;
 }
 
@@ -228,11 +221,8 @@ function publishArticle() {
 
 .content {
   flex: 1;
-
   max-width: 1100px;
-
   margin: auto;
-
   padding: 30px;
 }
 
@@ -241,28 +231,19 @@ function publishArticle() {
 
 .topbar {
   display: flex;
-
   justify-content: space-between;
-
   align-items: center;
-
   margin-bottom: 25px;
 }
 
 
 .publish {
   background: #2271b1;
-
   color: white;
-
   border: 0;
-
   border-radius: 5px;
-
   padding: 11px 22px;
-
   font-size: 15px;
-
   cursor: pointer;
 }
 
@@ -271,15 +252,10 @@ function publishArticle() {
 
 .title {
   width: 100%;
-
   padding: 18px;
-
   border: 1px solid #ccc;
-
   border-radius: 5px;
-
   font-size: 28px;
-
   margin-bottom: 15px;
 }
 
@@ -288,45 +264,29 @@ function publishArticle() {
 
 .editor {
   background: white;
-
   border: 1px solid #ccc;
-
   border-radius: 5px;
-
   padding: 15px;
 }
 
 
 .mongol-editor {
-
   writing-mode: vertical-lr;
-
   text-orientation: mixed;
-
   font-family: MongolianScript, serif;
-
   font-size: 30px;
-
   line-height: 1.7;
-
   height: 500px;
-
   overflow-x: auto;
-
   overflow-y: hidden;
-
   white-space: pre-wrap;
-
   outline: none;
-
   padding: 20px;
-
 }
 
 
 .mongol-editor:empty::before {
   content: attr(data-placeholder);
-
   opacity: .4;
 }
 
@@ -334,38 +294,26 @@ function publishArticle() {
 /* SETTINGS */
 
 .settings {
-
   background: white;
-
   margin-top: 20px;
-
   padding: 20px;
-
   border: 1px solid #ddd;
-
   border-radius: 5px;
 }
 
 
 .settings label {
-
   display: block;
-
   margin-top: 15px;
-
   margin-bottom: 5px;
 }
 
 
 .settings input,
 .settings select {
-
   width: 100%;
-
   padding: 12px;
-
   border: 1px solid #ccc;
-
   border-radius: 5px;
 }
 
