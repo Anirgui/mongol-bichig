@@ -32,7 +32,6 @@ async function loadArticle() {
   loading.value = true
 
   try {
-
     const response = await fetch(
       'https://mongol-bichig.vercel.app/api/articles',
       {
@@ -41,11 +40,6 @@ async function loadArticle() {
     )
 
     const data = await response.json()
-
-    console.log(
-      'API response:',
-      data
-    )
 
     if (!response.ok) {
       throw new Error(
@@ -62,11 +56,6 @@ async function loadArticle() {
     const id =
       String(route.params.id)
 
-    console.log(
-      'Edit ID:',
-      id
-    )
-
     const article =
       articles.find(
         item =>
@@ -74,19 +63,14 @@ async function loadArticle() {
       )
 
     if (!article) {
-
-      alert(
-        'Нийтлэл олдсонгүй'
-      )
-
+      alert('Нийтлэл олдсонгүй')
       router.push('/admin')
-
       return
     }
 
 
     /* =========================
-       Өгөгдөл
+       Өгөгдөл авах
     ========================= */
 
     title.value =
@@ -102,32 +86,23 @@ async function loadArticle() {
       article.content || ''
 
 
-    console.log(
-      'NEON CONTENT:',
-      article.content
-    )
-
-    console.log(
-      'CONTENT VALUE:',
-      content.value
-    )
-
-
     /* =========================
-       Editor дотор content хийх
+       Эхлээд editor-ийг
+       DOM-д үүсгэнэ
     ========================= */
+
+    loading.value = false
 
     await nextTick()
 
-    if (editor.value) {
 
+    /* =========================
+       Дараа нь content оруулна
+    ========================= */
+
+    if (editor.value) {
       editor.value.textContent =
         content.value
-
-      console.log(
-        'EDITOR CONTENT:',
-        editor.value.textContent
-      )
     }
 
   } catch (error) {
@@ -164,7 +139,6 @@ function updateContent() {
 
   content.value =
     editor.value.innerText
-
 }
 
 
@@ -178,21 +152,15 @@ async function saveArticle() {
 
 
   if (!title.value.trim()) {
-
-    alert(
-      'Гарчиг оруулна уу!'
-    )
-
+    alert('Гарчиг оруулна уу!')
     return
   }
 
 
   if (!content.value.trim()) {
-
     alert(
       'Монгол бичгийн текст хоосон байна!'
     )
-
     return
   }
 
@@ -224,12 +192,6 @@ async function saveArticle() {
   }
 
 
-  console.log(
-    'PUT илгээж байна:',
-    article
-  )
-
-
   try {
 
     const response =
@@ -251,12 +213,6 @@ async function saveArticle() {
 
     const data =
       await response.json()
-
-
-    console.log(
-      'PUT API response:',
-      data
-    )
 
 
     if (!response.ok) {
@@ -294,7 +250,6 @@ async function saveArticle() {
     saving.value = false
 
   }
-
 }
 
 
@@ -303,9 +258,7 @@ async function saveArticle() {
 ========================= */
 
 function cancel() {
-
   router.push('/admin')
-
 }
 
 
@@ -314,9 +267,7 @@ function cancel() {
 ========================= */
 
 onMounted(() => {
-
   loadArticle()
-
 })
 
 </script>
@@ -333,16 +284,13 @@ onMounted(() => {
       v-if="loading"
       class="loading"
     >
-
       Нийтлэлийг ачаалж байна...
-
     </div>
 
 
-    <!-- Editor -->
+    <!-- Засах хэсэг -->
 
     <template v-else>
-
 
       <div class="topbar">
 
@@ -398,7 +346,6 @@ onMounted(() => {
 
         <div class="row">
 
-
           <input
             v-model="author"
             type="text"
@@ -414,26 +361,21 @@ onMounted(() => {
               Ангилал сонгох
             </option>
 
-
             <option value="Шүлэг">
               Шүлэг
             </option>
-
 
             <option value="Өгүүллэг">
               Өгүүллэг
             </option>
 
-
             <option value="Зүйр цэцэн үг">
               Зүйр цэцэн үг
             </option>
 
-
             <option value="Үлгэр">
               Үлгэр
             </option>
-
 
             <option value="Бусад">
               Бусад
@@ -467,293 +409,185 @@ onMounted(() => {
 <style scoped>
 
 @font-face {
-
-  font-family:
-    MongolianScript;
-
-  src:
-    url('/fonts/MongolianScript.ttf');
-
+  font-family: MongolianScript;
+  src: url('/fonts/MongolianScript.ttf');
 }
 
 
 * {
-
-  box-sizing:
-    border-box;
-
+  box-sizing: border-box;
 }
 
 
 .edit-page {
+  min-height: 100vh;
 
-  min-height:
-    100vh;
+  background: #f5f5f5;
 
-  background:
-    #f5f5f5;
-
-  padding:
-    25px;
-
+  padding: 25px;
 }
 
 
 .loading {
+  text-align: center;
 
-  text-align:
-    center;
+  padding: 100px 20px;
 
-  padding:
-    100px 20px;
+  color: #666;
 
-  color:
-    #666;
-
-  font-size:
-    18px;
-
+  font-size: 18px;
 }
 
 
 .topbar {
+  max-width: 1000px;
 
-  max-width:
-    1000px;
+  margin: 0 auto 20px;
 
-  margin:
-    0 auto 20px;
+  display: flex;
 
-  display:
-    flex;
+  justify-content: space-between;
 
-  justify-content:
-    space-between;
+  align-items: center;
 
-  align-items:
-    center;
-
-  gap:
-    15px;
-
+  gap: 15px;
 }
 
 
 .topbar h1 {
-
-  margin:
-    0;
-
+  margin: 0;
 }
 
 
 .actions {
+  display: flex;
 
-  display:
-    flex;
-
-  gap:
-    8px;
-
+  gap: 8px;
 }
 
 
 .actions button {
+  padding: 9px 15px;
 
-  padding:
-    9px 15px;
+  border-radius: 6px;
 
-  border-radius:
-    6px;
+  cursor: pointer;
 
-  cursor:
-    pointer;
-
-  font-size:
-    14px;
-
+  font-size: 14px;
 }
 
 
 .actions button:disabled {
+  opacity: .6;
 
-  opacity:
-    .6;
-
-  cursor:
-    default;
-
+  cursor: default;
 }
 
 
 .cancel-button {
+  border: 1px solid #ddd;
 
-  border:
-    1px solid #ddd;
+  background: white;
 
-  background:
-    white;
-
-  color:
-    #333;
-
+  color: #333;
 }
 
 
 .save-button {
+  border: none;
 
-  border:
-    none;
+  background: #222;
 
-  background:
-    #222;
-
-  color:
-    white;
-
+  color: white;
 }
 
 
 .form {
+  max-width: 1000px;
 
-  max-width:
-    1000px;
-
-  margin:
-    0 auto;
-
+  margin: 0 auto;
 }
 
 
 .title-input {
+  width: 100%;
 
-  width:
-    100%;
+  padding: 13px;
 
-  padding:
-    13px;
+  margin-bottom: 12px;
 
-  margin-bottom:
-    12px;
+  border: 1px solid #ddd;
 
-  border:
-    1px solid #ddd;
+  border-radius: 7px;
 
-  border-radius:
-    7px;
+  font-size: 20px;
 
-  font-size:
-    20px;
-
-  background:
-    white;
-
+  background: white;
 }
 
 
 .row {
+  display: flex;
 
-  display:
-    flex;
+  gap: 10px;
 
-  gap:
-    10px;
-
-  margin-bottom:
-    15px;
-
+  margin-bottom: 15px;
 }
 
 
 .row input,
 .row select {
+  flex: 1;
 
-  flex:
-    1;
+  padding: 11px;
 
-  padding:
-    11px;
+  border: 1px solid #ddd;
 
-  border:
-    1px solid #ddd;
+  border-radius: 7px;
 
-  border-radius:
-    7px;
+  background: white;
 
-  background:
-    white;
-
-  font-size:
-    15px;
-
+  font-size: 15px;
 }
 
 
 .mongol-editor {
 
-  writing-mode:
-    vertical-lr;
+  writing-mode: vertical-lr;
 
-  direction:
-    rtl;
+  direction: rtl;
 
-  text-orientation:
-    mixed;
+  text-orientation: mixed;
 
+  font-family: MongolianScript, serif;
 
-  font-family:
-    MongolianScript, serif;
+  font-size: 18px;
 
-  font-size:
-    18px;
+  line-height: 1.7;
 
-  line-height:
-    1.7;
+  min-height: 700px;
 
+  width: 100%;
 
-  min-height:
-    700px;
+  white-space: pre-wrap;
 
-  width:
-    100%;
+  text-align: left;
 
+  outline: none;
 
-  white-space:
-    pre-wrap;
+  padding: 25px;
 
+  background: white;
 
-  text-align:
-    left;
+  border: 1px solid #ddd;
 
+  border-radius: 8px;
 
-  outline:
-    none;
+  overflow-x: auto;
 
+  overflow-y: hidden;
 
-  padding:
-    25px;
-
-
-  background:
-    white;
-
-  border:
-    1px solid #ddd;
-
-  border-radius:
-    8px;
-
-
-  overflow-x:
-    auto;
-
-  overflow-y:
-    hidden;
-
-
-  box-sizing:
-    border-box;
-
+  box-sizing: border-box;
 }
 
 
@@ -762,11 +596,9 @@ onMounted(() => {
   content:
     attr(data-placeholder);
 
-  color:
-    #aaa;
+  color: #aaa;
 
-  pointer-events:
-    none;
+  pointer-events: none;
 
 }
 
@@ -774,45 +606,31 @@ onMounted(() => {
 @media (max-width: 600px) {
 
   .edit-page {
-
-    padding:
-      15px;
-
+    padding: 15px;
   }
 
 
   .topbar {
 
-    align-items:
-      flex-start;
+    align-items: flex-start;
 
-    flex-direction:
-      column;
+    flex-direction: column;
 
   }
 
 
   .actions {
-
-    width:
-      100%;
-
+    width: 100%;
   }
 
 
   .actions button {
-
-    flex:
-      1;
-
+    flex: 1;
   }
 
 
   .row {
-
-    flex-direction:
-      column;
-
+    flex-direction: column;
   }
 
 }
