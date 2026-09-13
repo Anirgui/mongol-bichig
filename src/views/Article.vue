@@ -6,30 +6,74 @@ const route = useRoute()
 const router = useRouter()
 
 const article = ref(null)
+const loading = ref(true)
+const errorMessage = ref('')
 
 // Background зураг
 const backgroundImage = ref('')
 
-onMounted(() => {
-  const articles = JSON.parse(
-    localStorage.getItem('articles') || '[]'
-  )
+async function loadArticle() {
+  loading.value = true
+  errorMessage.value = ''
 
-  const id = Number(route.params.id)
+  try {
+    const response = await fetch(
+      'https://mongol-bichig.vercel.app/api/articles',
+      {
+        cache: 'no-store'
+      }
+    )
 
-  article.value = articles.find(
-    item => item.id === id
-  )
+    const data = await response.json()
 
+    if (!response.ok) {
+      throw new Error(
+        data.message || 'Нийтлэл авахад алдаа гарлаа'
+      )
+    }
+
+    const articles = Array.isArray(data.articles)
+      ? data.articles
+      : []
+
+    const id = String(route.params.id)
+
+    article.value = articles.find(
+      item => String(item.id) === id
+    ) || null
+
+    if (!article.value) {
+      errorMessage.value = 'Энэ нийтлэл олдсонгүй.'
+    }
+
+  } catch (error) {
+    console.error('Нийтлэл авах алдаа:', error)
+
+    errorMessage.value =
+      'Нийтлэлийг авахад алдаа гарлаа: ' +
+      error.message
+
+  } finally {
+    loading.value = false
+  }
+}
+
+function loadBackground() {
   // Admin-аас сонгосон background зургийг унших
   backgroundImage.value =
     localStorage.getItem('readerBackground') || ''
-})
+}
 
 function goBack() {
   router.back()
 }
+
+onMounted(() => {
+  loadArticle()
+  loadBackground()
+})
 </script>
+
 
 <template>
   <div class="reader">
@@ -47,8 +91,46 @@ function goBack() {
     </header>
 
 
+    <!-- АЧААЛЖ БАЙНА -->
+
     <main
-      v-if="article"
+      v-if="loading"
+      class="not-found"
+    >
+
+      <h1>
+        Нийтлэлийг ачаалж байна...
+      </h1>
+
+    </main>
+
+
+    <!-- АЛДАА -->
+
+    <main
+      v-else-if="errorMessage"
+      class="not-found"
+    >
+
+      <h1>
+        Нийтлэл олдсонгүй
+      </h1>
+
+      <p>
+        {{ errorMessage }}
+      </p>
+
+      <router-link to="/">
+        Нүүр хуудас руу буцах
+      </router-link>
+
+    </main>
+
+
+    <!-- НИЙТЛЭЛ -->
+
+    <main
+      v-else-if="article"
       class="article"
     >
 
@@ -92,6 +174,8 @@ function goBack() {
 
     </main>
 
+
+    <!-- НИЙТЛЭЛ БАЙХГҮЙ -->
 
     <main
       v-else

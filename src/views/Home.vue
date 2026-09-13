@@ -4,13 +4,19 @@ import { ref, computed, onMounted } from 'vue'
 const articles = ref([])
 const search = ref('')
 const selectedCategory = ref('Бүгд')
+const loading = ref(true)
 
 const categories = ['Бүгд', 'Өгүүллэг', 'Шүлэг', 'Үлгэр']
 
 async function loadArticles() {
+  loading.value = true
+
   try {
     const response = await fetch(
-      'https://mongol-bichig.vercel.app/api/articles'
+      'https://mongol-bichig.vercel.app/api/articles',
+      {
+        cache: 'no-store'
+      }
     )
 
     const data = await response.json()
@@ -21,27 +27,44 @@ async function loadArticles() {
       )
     }
 
-    articles.value = data.articles || []
+    articles.value = Array.isArray(data.articles)
+      ? data.articles
+      : []
 
-    console.log('Neon-оос авсан нийтлэлүүд:', articles.value)
+    console.log(
+      'Neon-оос авсан нийтлэлүүд:',
+      articles.value
+    )
 
   } catch (error) {
-    console.error(error)
-    alert('Нийтлэлүүдийг авахад алдаа гарлаа: ' + error.message)
+    console.error('Нийтлэл авах алдаа:', error)
+
+    alert(
+      'Нийтлэлүүдийг авахад алдаа гарлаа: ' +
+      error.message
+    )
+
+    articles.value = []
+
+  } finally {
+    loading.value = false
   }
 }
 
 const filteredArticles = computed(() => {
+  const keyword = search.value.trim().toLowerCase()
+
   return articles.value.filter(article => {
 
     const categoryMatch =
       selectedCategory.value === 'Бүгд' ||
       article.category === selectedCategory.value
 
+    const title =
+      String(article.title || '').toLowerCase()
+
     const searchMatch =
-      article.title
-        .toLowerCase()
-        .includes(search.value.toLowerCase())
+      title.includes(keyword)
 
     return categoryMatch && searchMatch
   })
@@ -115,9 +138,30 @@ onMounted(() => {
     </div>
 
 
+    <!-- LOADING -->
+
+    <main
+      v-if="loading"
+      class="articles"
+    >
+
+      <div class="empty">
+
+        <h2>
+          Нийтлэлүүдийг ачаалж байна...
+        </h2>
+
+      </div>
+
+    </main>
+
+
     <!-- ARTICLES -->
 
-    <main class="articles">
+    <main
+      v-else
+      class="articles"
+    >
 
       <article
         v-for="article in filteredArticles"
