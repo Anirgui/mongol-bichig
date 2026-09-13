@@ -16,10 +16,47 @@ const backgroundImage = ref('')
 
 const fileInput = ref(null)
 
-function loadArticles() {
-  articles.value = JSON.parse(
-    localStorage.getItem('articles') || '[]'
-  )
+const loading = ref(true)
+
+async function loadArticles() {
+  loading.value = true
+
+  try {
+    const response = await fetch(
+      'https://mongol-bichig.vercel.app/api/articles',
+      {
+        cache: 'no-store'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || 'Нийтлэл авахад алдаа гарлаа'
+      )
+    }
+
+    articles.value = Array.isArray(data.articles)
+      ? data.articles
+      : []
+
+  } catch (error) {
+    console.error(
+      'Нийтлэл авах алдаа:',
+      error
+    )
+
+    alert(
+      'Нийтлэлүүдийг авахад алдаа гарлаа: ' +
+      error.message
+    )
+
+    articles.value = []
+
+  } finally {
+    loading.value = false
+  }
 }
 
 function loadBackground() {
@@ -69,19 +106,50 @@ function removeBackground() {
   )
 }
 
-function deleteArticle(id) {
+async function deleteArticle(id) {
   if (!confirm('Энэ нийтлэлийг устгах уу?')) {
     return
   }
 
-  articles.value = articles.value.filter(
-    article => article.id !== id
-  )
+  try {
+    const response = await fetch(
+      'https://mongol-bichig.vercel.app/api/articles',
+      {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          id: String(id)
+        })
+      }
+    )
 
-  localStorage.setItem(
-    'articles',
-    JSON.stringify(articles.value)
-  )
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || 'Нийтлэл устгахад алдаа гарлаа'
+      )
+    }
+
+    articles.value = articles.value.filter(
+      article => String(article.id) !== String(id)
+    )
+
+    alert('Нийтлэл амжилттай устгагдлаа! 🗑️')
+
+  } catch (error) {
+    console.error(
+      'Нийтлэл устгах алдаа:',
+      error
+    )
+
+    alert(
+      'Нийтлэл устгахад алдаа гарлаа: ' +
+      error.message
+    )
+  }
 }
 
 function logout() {
@@ -181,10 +249,22 @@ onMounted(() => {
       </div>
 
 
+      <!-- Ачаалж байгаа -->
+
+      <div
+        v-if="loading"
+        class="empty"
+      >
+
+        <h2>Нийтлэлүүдийг ачаалж байна...</h2>
+
+      </div>
+
+
       <!-- Нийтлэл байхгүй үед -->
 
       <div
-        v-if="articles.length === 0"
+        v-else-if="articles.length === 0"
         class="empty"
       >
 

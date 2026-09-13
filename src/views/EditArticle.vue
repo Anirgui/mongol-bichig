@@ -11,32 +11,68 @@ const category = ref('')
 const content = ref('')
 
 const editor = ref(null)
+const loading = ref(true)
+const saving = ref(false)
 
-function loadArticle() {
-  const articles = JSON.parse(
-    localStorage.getItem('articles') || '[]'
-  )
+async function loadArticle() {
+  loading.value = true
 
-  const article = articles.find(
-    item => item.id === Number(route.params.id)
-  )
+  try {
+    const response = await fetch(
+      'https://mongol-bichig.vercel.app/api/articles',
+      {
+        cache: 'no-store'
+      }
+    )
 
-  if (!article) {
-    alert('Нийтлэл олдсонгүй')
-    router.push('/admin')
-    return
-  }
+    const data = await response.json()
 
-  title.value = article.title
-  author.value = article.author
-  category.value = article.category
-  content.value = article.content
-
-  nextTick(() => {
-    if (editor.value) {
-      editor.value.innerText = article.content
+    if (!response.ok) {
+      throw new Error(
+        data.message || 'Нийтлэл авахад алдаа гарлаа'
+      )
     }
-  })
+
+    const articles = Array.isArray(data.articles)
+      ? data.articles
+      : []
+
+    const id = String(route.params.id)
+
+    const article = articles.find(
+      item => String(item.id) === id
+    )
+
+    if (!article) {
+      alert('Нийтлэл олдсонгүй')
+      router.push('/admin')
+      return
+    }
+
+    title.value = article.title || ''
+    author.value = article.author || ''
+    category.value = article.category || ''
+    content.value = article.content || ''
+
+    await nextTick()
+
+    if (editor.value) {
+      editor.value.innerText = content.value
+    }
+
+  } catch (error) {
+    console.error('Нийтлэл авах алдаа:', error)
+
+    alert(
+      'Нийтлэл авахад алдаа гарлаа: ' +
+      error.message
+    )
+
+    router.push('/admin')
+
+  } finally {
+    loading.value = false
+  }
 }
 
 function updateContent() {
@@ -45,35 +81,68 @@ function updateContent() {
   }
 }
 
-function saveArticle() {
-  const articles = JSON.parse(
-    localStorage.getItem('articles') || '[]'
-  )
+async function saveArticle() {
+  updateContent()
 
-  const index = articles.findIndex(
-    item => item.id === Number(route.params.id)
-  )
-
-  if (index === -1) {
-    alert('Нийтлэл олдсонгүй')
+  if (!title.value.trim()) {
+    alert('Гарчиг оруулна уу!')
     return
   }
 
-  articles[index] = {
-    ...articles[index],
+  if (!content.value.trim()) {
+    alert('Монгол бичгийн текстээ оруулна уу!')
+    return
+  }
+
+  saving.value = true
+
+  const article = {
+    id: String(route.params.id),
     title: title.value.trim(),
     author: author.value.trim() || 'Тодорхойгүй',
     category: category.value,
-    content: content.value
+    content: content.value,
+    status: 'published',
+    date: new Date().toLocaleDateString('mn-MN')
   }
 
-  localStorage.setItem(
-    'articles',
-    JSON.stringify(articles)
-  )
+  try {
+    const response = await fetch(
+      'https://mongol-bichig.vercel.app/api/articles',
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(article)
+      }
+    )
 
-  alert('Нийтлэл хадгалагдлаа')
-  router.push('/admin')
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || 'Нийтлэл хадгалахад алдаа гарлаа'
+      )
+    }
+
+    console.log('API хариу:', data)
+
+    alert('Нийтлэл амжилттай шинэчлэгдлээ! 🎉')
+
+    router.push('/admin')
+
+  } catch (error) {
+    console.error('Нийтлэл хадгалах алдаа:', error)
+
+    alert(
+      'Алдаа: ' +
+      error.message
+    )
+
+  } finally {
+    saving.value = false
+  }
 }
 
 function cancel() {
@@ -85,6 +154,7 @@ onMounted(() => {
 })
 </script>
 
+
 <template>
   <div class="edit-page">
 
@@ -92,9 +162,11 @@ onMounted(() => {
       <h1>Нийтлэл засах</h1>
 
       <div class="actions">
+
         <button
           class="cancel-button"
           @click="cancel"
+          :disabled="saving"
         >
           Болих
         </button>
@@ -102,13 +174,27 @@ onMounted(() => {
         <button
           class="save-button"
           @click="saveArticle"
+          :disabled="saving || loading"
         >
-          Хадгалах
+          {{ saving ? 'Хадгалж байна...' : 'Хадгалах' }}
         </button>
+
       </div>
     </div>
 
-    <div class="form">
+
+    <div
+      v-if="loading"
+      class="loading"
+    >
+      Нийтлэлийг ачаалж байна...
+    </div>
+
+
+    <div
+      v-else
+      class="form"
+    >
 
       <input
         v-model="title"
@@ -116,6 +202,7 @@ onMounted(() => {
         type="text"
         placeholder="Гарчиг"
       />
+
 
       <div class="row">
 
@@ -125,7 +212,9 @@ onMounted(() => {
           placeholder="Зохиогч"
         />
 
+
         <select v-model="category">
+
           <option value="">
             Ангилал сонгох
           </option>
@@ -145,9 +234,11 @@ onMounted(() => {
           <option value="Бусад">
             Бусад
           </option>
+
         </select>
 
       </div>
+
 
       <div
         ref="editor"
@@ -162,6 +253,7 @@ onMounted(() => {
   </div>
 </template>
 
+
 <style scoped>
 
 .edit-page {
@@ -171,104 +263,175 @@ onMounted(() => {
   box-sizing: border-box;
 }
 
+
 .topbar {
   max-width: 1000px;
   margin: 0 auto 20px;
+
   display: flex;
+
   justify-content: space-between;
+
   align-items: center;
+
   gap: 15px;
 }
+
 
 .topbar h1 {
   margin: 0;
 }
+
 
 .actions {
   display: flex;
   gap: 8px;
 }
 
+
 .actions button {
   padding: 9px 15px;
+
   border-radius: 6px;
+
   cursor: pointer;
+
   font-size: 14px;
 }
 
+
+.actions button:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+
 .cancel-button {
   border: 1px solid #ddd;
+
   background: white;
+
   color: #333;
 }
 
+
 .save-button {
   border: none;
+
   background: #222;
+
   color: white;
 }
+
 
 .form {
   max-width: 1000px;
   margin: 0 auto;
 }
 
+
+.loading {
+  max-width: 1000px;
+
+  margin: 80px auto;
+
+  text-align: center;
+
+  color: #666;
+}
+
+
 .title-input {
   width: 100%;
+
   box-sizing: border-box;
+
   padding: 13px;
+
   margin-bottom: 12px;
+
   border: 1px solid #ddd;
+
   border-radius: 7px;
+
   font-size: 20px;
+
   background: white;
 }
 
+
 .row {
   display: flex;
+
   gap: 10px;
+
   margin-bottom: 15px;
 }
+
 
 .row input,
 .row select {
   flex: 1;
+
   padding: 11px;
+
   border: 1px solid #ddd;
+
   border-radius: 7px;
+
   background: white;
+
   font-size: 15px;
 }
 
+
 .mongol-editor {
   writing-mode: vertical-lr;
+
   direction: rtl;
+
   text-orientation: mixed;
 
+
   font-family: MongolianScript, serif;
+
   font-size: 18px;
+
   line-height: 1.7;
 
+
   min-height: 700px;
+
   width: 100%;
 
+
   white-space: pre-wrap;
-  
+
+
   text-align: left;
+
 
   outline: none;
 
+
   padding: 25px;
 
+
   background: white;
+
   border: 1px solid #ddd;
+
   border-radius: 8px;
 
+
   overflow-x: auto;
+
   overflow-y: hidden;
+
 
   box-sizing: border-box;
 }
+
 
 @media (max-width: 600px) {
 
@@ -276,18 +439,23 @@ onMounted(() => {
     padding: 15px;
   }
 
+
   .topbar {
     align-items: flex-start;
+
     flex-direction: column;
   }
+
 
   .actions {
     width: 100%;
   }
 
+
   .actions button {
     flex: 1;
   }
+
 
   .row {
     flex-direction: column;
