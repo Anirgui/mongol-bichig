@@ -1,6 +1,14 @@
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import {
+  ref,
+  onMounted,
+  nextTick
+} from 'vue'
+
+import {
+  useRoute,
+  useRouter
+} from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,6 +19,7 @@ const category = ref('')
 const content = ref('')
 
 const editor = ref(null)
+
 const loading = ref(true)
 const saving = ref(false)
 
@@ -57,11 +66,15 @@ async function loadArticle() {
     await nextTick()
 
     if (editor.value) {
-      editor.value.innerText = content.value
+      editor.value.textContent =
+        article.content || ''
     }
 
   } catch (error) {
-    console.error('Нийтлэл авах алдаа:', error)
+    console.error(
+      'Нийтлэл авах алдаа:',
+      error
+    )
 
     alert(
       'Нийтлэл авахад алдаа гарлаа: ' +
@@ -76,9 +89,12 @@ async function loadArticle() {
 }
 
 function updateContent() {
-  if (editor.value) {
-    content.value = editor.value.innerText
+  if (!editor.value) {
+    return
   }
+
+  content.value =
+    editor.value.innerText
 }
 
 async function saveArticle() {
@@ -90,7 +106,7 @@ async function saveArticle() {
   }
 
   if (!content.value.trim()) {
-    alert('Монгол бичгийн текстээ оруулна уу!')
+    alert('Монгол бичгийн текст хоосон байна!')
     return
   }
 
@@ -98,12 +114,18 @@ async function saveArticle() {
 
   const article = {
     id: String(route.params.id),
+
     title: title.value.trim(),
-    author: author.value.trim() || 'Тодорхойгүй',
+
+    author:
+      author.value.trim() ||
+      'Тодорхойгүй',
+
     category: category.value,
+
     content: content.value,
-    status: 'published',
-    date: new Date().toLocaleDateString('mn-MN')
+
+    status: 'published'
   }
 
   try {
@@ -111,9 +133,11 @@ async function saveArticle() {
       'https://mongol-bichig.vercel.app/api/articles',
       {
         method: 'PUT',
+
         headers: {
           'Content-Type': 'application/json'
         },
+
         body: JSON.stringify(article)
       }
     )
@@ -122,18 +146,27 @@ async function saveArticle() {
 
     if (!response.ok) {
       throw new Error(
-        data.message || 'Нийтлэл хадгалахад алдаа гарлаа'
+        data.message ||
+        'Нийтлэл хадгалахад алдаа гарлаа'
       )
     }
 
-    console.log('API хариу:', data)
+    console.log(
+      'PUT API хариу:',
+      data
+    )
 
-    alert('Нийтлэл амжилттай шинэчлэгдлээ! 🎉')
+    alert(
+      'Нийтлэл амжилттай засагдлаа! 🎉'
+    )
 
     router.push('/admin')
 
   } catch (error) {
-    console.error('Нийтлэл хадгалах алдаа:', error)
+    console.error(
+      'Нийтлэл хадгалах алдаа:',
+      error
+    )
 
     alert(
       'Алдаа: ' +
@@ -156,32 +189,10 @@ onMounted(() => {
 
 
 <template>
+
   <div class="edit-page">
 
-    <div class="topbar">
-      <h1>Нийтлэл засах</h1>
-
-      <div class="actions">
-
-        <button
-          class="cancel-button"
-          @click="cancel"
-          :disabled="saving"
-        >
-          Болих
-        </button>
-
-        <button
-          class="save-button"
-          @click="saveArticle"
-          :disabled="saving || loading"
-        >
-          {{ saving ? 'Хадгалж байна...' : 'Хадгалах' }}
-        </button>
-
-      </div>
-    </div>
-
+    <!-- Ачаалж байгаа -->
 
     <div
       v-if="loading"
@@ -191,81 +202,148 @@ onMounted(() => {
     </div>
 
 
-    <div
-      v-else
-      class="form"
-    >
+    <!-- Засах хэсэг -->
 
-      <input
-        v-model="title"
-        class="title-input"
-        type="text"
-        placeholder="Гарчиг"
-      />
+    <template v-else>
 
+      <div class="topbar">
 
-      <div class="row">
+        <h1>
+          Нийтлэл засах
+        </h1>
 
-        <input
-          v-model="author"
-          type="text"
-          placeholder="Зохиогч"
-        />
+        <div class="actions">
 
+          <button
+            class="cancel-button"
+            @click="cancel"
+            :disabled="saving"
+          >
+            Болих
+          </button>
 
-        <select v-model="category">
+          <button
+            class="save-button"
+            @click="saveArticle"
+            :disabled="saving"
+          >
+            {{ saving ? 'Хадгалж байна...' : 'Хадгалах' }}
+          </button>
 
-          <option value="">
-            Ангилал сонгох
-          </option>
-
-          <option value="Шүлэг">
-            Шүлэг
-          </option>
-
-          <option value="Өгүүллэг">
-            Өгүүллэг
-          </option>
-
-          <option value="Зүйр цэцэн үг">
-            Зүйр цэцэн үг
-          </option>
-
-          <option value="Бусад">
-            Бусад
-          </option>
-
-        </select>
+        </div>
 
       </div>
 
 
-      <div
-        ref="editor"
-        class="mongol-editor"
-        contenteditable="true"
-        data-placeholder="Монгол бичгийн текстээ энд оруулна уу..."
-        @input="updateContent"
-      ></div>
+      <div class="form">
 
-    </div>
+        <!-- Гарчиг -->
+
+        <input
+          v-model="title"
+          class="title-input"
+          type="text"
+          placeholder="Гарчиг"
+        />
+
+
+        <!-- Зохиогч + ангилал -->
+
+        <div class="row">
+
+          <input
+            v-model="author"
+            type="text"
+            placeholder="Зохиогч"
+          />
+
+          <select v-model="category">
+
+            <option value="">
+              Ангилал сонгох
+            </option>
+
+            <option value="Шүлэг">
+              Шүлэг
+            </option>
+
+            <option value="Өгүүллэг">
+              Өгүүллэг
+            </option>
+
+            <option value="Зүйр цэцэн үг">
+              Зүйр цэцэн үг
+            </option>
+
+            <option value="Үлгэр">
+              Үлгэр
+            </option>
+
+            <option value="Бусад">
+              Бусад
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <!-- Монгол бичгийн editor -->
+
+        <div
+          ref="editor"
+          class="mongol-editor"
+          contenteditable="true"
+          data-placeholder="Монгол бичгийн текстээ энд оруулна уу..."
+          @input="updateContent"
+        ></div>
+
+      </div>
+
+    </template>
 
   </div>
+
 </template>
 
 
 <style scoped>
 
+@font-face {
+  font-family: MongolianScript;
+  src: url('/fonts/MongolianScript.ttf');
+}
+
+
 .edit-page {
   min-height: 100vh;
+
   background: #f5f5f5;
+
   padding: 25px;
+
   box-sizing: border-box;
 }
 
 
+/* LOADING */
+
+.loading {
+  text-align: center;
+
+  padding: 100px 20px;
+
+  color: #666;
+
+  font-size: 18px;
+}
+
+
+/* TOPBAR */
+
 .topbar {
   max-width: 1000px;
+
   margin: 0 auto 20px;
 
   display: flex;
@@ -277,17 +355,18 @@ onMounted(() => {
   gap: 15px;
 }
 
-
 .topbar h1 {
   margin: 0;
 }
 
 
+/* ACTIONS */
+
 .actions {
   display: flex;
+
   gap: 8px;
 }
-
 
 .actions button {
   padding: 9px 15px;
@@ -299,12 +378,11 @@ onMounted(() => {
   font-size: 14px;
 }
 
-
 .actions button:disabled {
   opacity: .6;
-  cursor: not-allowed;
-}
 
+  cursor: default;
+}
 
 .cancel-button {
   border: 1px solid #ddd;
@@ -313,7 +391,6 @@ onMounted(() => {
 
   color: #333;
 }
-
 
 .save-button {
   border: none;
@@ -324,22 +401,16 @@ onMounted(() => {
 }
 
 
+/* FORM */
+
 .form {
   max-width: 1000px;
+
   margin: 0 auto;
 }
 
 
-.loading {
-  max-width: 1000px;
-
-  margin: 80px auto;
-
-  text-align: center;
-
-  color: #666;
-}
-
+/* TITLE */
 
 .title-input {
   width: 100%;
@@ -360,6 +431,8 @@ onMounted(() => {
 }
 
 
+/* ROW */
+
 .row {
   display: flex;
 
@@ -367,7 +440,6 @@ onMounted(() => {
 
   margin-bottom: 15px;
 }
-
 
 .row input,
 .row select {
@@ -385,7 +457,10 @@ onMounted(() => {
 }
 
 
+/* MONGOLIAN EDITOR */
+
 .mongol-editor {
+
   writing-mode: vertical-lr;
 
   direction: rtl;
@@ -433,31 +508,45 @@ onMounted(() => {
 }
 
 
+/* PLACEHOLDER */
+
+.mongol-editor:empty::before {
+
+  content: attr(data-placeholder);
+
+  color: #aaa;
+
+  pointer-events: none;
+}
+
+
+/* MOBILE */
+
 @media (max-width: 600px) {
 
   .edit-page {
     padding: 15px;
   }
 
-
   .topbar {
+
     align-items: flex-start;
 
     flex-direction: column;
   }
 
-
   .actions {
+
     width: 100%;
   }
 
-
   .actions button {
+
     flex: 1;
   }
 
-
   .row {
+
     flex-direction: column;
   }
 
